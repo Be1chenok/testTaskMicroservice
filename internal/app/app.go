@@ -8,16 +8,28 @@ import (
 	"syscall"
 
 	"github.com/Be1chenok/testTaskMicroservice/internal/config"
+	"github.com/Be1chenok/testTaskMicroservice/internal/delivery/http/handler"
 	"github.com/Be1chenok/testTaskMicroservice/internal/delivery/http/server"
+	"github.com/Be1chenok/testTaskMicroservice/internal/repository"
+	"github.com/Be1chenok/testTaskMicroservice/internal/repository/postgres"
+	"github.com/Be1chenok/testTaskMicroservice/internal/service"
 )
 
 func Run() {
-	srvConf, err := config.SrvInit()
+	conf, err := config.Init()
 	if err != nil {
-		log.Fatalf("Failed to initialize server configuration: %v", err)
+		log.Fatalf("Failed to initialize configuration: %v", err)
 	}
 
-	srv := server.New(srvConf, nil)
+	db, err := postgres.New(conf)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	repository := repository.New(db)
+	service := service.New(repository)
+	handler := handler.New(service)
+	srv := server.New(conf, handler)
 
 	go func() {
 		if err := srv.Start(); err != nil {
