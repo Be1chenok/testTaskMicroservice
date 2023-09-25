@@ -6,21 +6,20 @@ import (
 	"time"
 
 	"github.com/Be1chenok/testTaskMicroservice/internal/config"
-	"github.com/Be1chenok/testTaskMicroservice/internal/delivery/http/handler"
 )
 
 type Server struct {
 	httpServer http.Server
 }
 
-func New(conf *config.Config, handler *handler.Handler) *Server {
+func New(conf *config.Config, handler http.Handler) *Server {
 	return &Server{
 		httpServer: http.Server{
 			Addr:           conf.Server.Host + ":" + conf.Server.Port,
 			MaxHeaderBytes: 1024 * 1024, // 1 MB
 			ReadTimeout:    10 * time.Second,
 			WriteTimeout:   10 * time.Second,
-			Handler:        handler.Init(),
+			Handler:        handler,
 		},
 	}
 }

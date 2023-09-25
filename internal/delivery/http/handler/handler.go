@@ -17,7 +17,7 @@ func New(service *service.Service) *Handler {
 	}
 }
 
-func (h *Handler) Init() http.Handler {
+func (h *Handler) InitRoutes() http.Handler {
 	router := mux.NewRouter()
 	router.Use()
 	return router

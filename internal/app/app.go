@@ -16,6 +16,8 @@ import (
 )
 
 func Run() {
+	ctx := context.Background()
+
 	conf, err := config.Init()
 	if err != nil {
 		log.Fatalf("Failed to initialize configuration: %v", err)
@@ -26,10 +28,15 @@ func Run() {
 		log.Fatal(err)
 	}
 
+	//cache, err := redis.New(ctx, conf)
+	//if err != nil {
+	//	log.Fatalf(err.Error())
+	//}
+
 	repository := repository.New(db)
 	service := service.New(repository)
 	handler := handler.New(service)
-	srv := server.New(conf, handler)
+	srv := server.New(conf, handler.InitRoutes())
 
 	go func() {
 		if err := srv.Start(); err != nil {
@@ -43,7 +50,7 @@ func Run() {
 
 	log.Print("Shuthing Down")
 
-	if err := srv.Shuthdown(context.Background()); err != nil {
+	if err := srv.Shuthdown(ctx); err != nil {
 		log.Fatalf("Failed to shut down the server: %v", err)
 	}
 }

@@ -8,15 +8,15 @@ import (
 )
 
 type Repository struct {
-	Registration
+	Authentification
 }
 
-type Registration interface {
+type Authentification interface {
 	CreateUser(user domain.User) (uint, error)
 }
 
 func New(db *sql.DB) *Repository {
 	return &Repository{
-		Registration: postgres.NewUser(db),
+		Authentification: postgres.NewUser(db),
 	}
 }

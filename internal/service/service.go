@@ -6,15 +6,15 @@ import (
 )
 
 type Service struct {
-	Registration
+	Authentification
 }
 
-type Registration interface {
+type Authentification interface {
 	CreateUser(user domain.User) (uint, error)
 }
 
 func New(repo *repository.Repository) *Service {
 	return &Service{
-		Registration: NewRegistrationService(repo.Registration),
+		Authentification: NewAuthentificationService(repo.Authentification),
 	}
 }
