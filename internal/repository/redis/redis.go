@@ -7,11 +7,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type RedisDB struct {
-	client *redis.Client
-}
-
-func New(ctx context.Context, conf *config.Config) (*RedisDB, error) {
+func New(ctx context.Context, conf *config.Config) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     conf.Cache.Host + ":" + conf.Cache.Port,
 		Password: conf.Cache.Password,
@@ -22,11 +18,11 @@ func New(ctx context.Context, conf *config.Config) (*RedisDB, error) {
 		return nil, err
 	}
 
-	return &RedisDB{client: client}, nil
+	return client, nil
 }
 
 /*
-func (rdb *RedisDB) Set(ctx context.Context, hey string, value interface{}) bool {
+func (rdb *RedisDB) Set(ctx context.Context, key string, value interface{}) bool {
 	return true
 }
 

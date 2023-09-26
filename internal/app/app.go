@@ -12,6 +12,7 @@ import (
 	"github.com/Be1chenok/testTaskMicroservice/internal/delivery/http/server"
 	"github.com/Be1chenok/testTaskMicroservice/internal/repository"
 	"github.com/Be1chenok/testTaskMicroservice/internal/repository/postgres"
+	rdb "github.com/Be1chenok/testTaskMicroservice/internal/repository/redis"
 	"github.com/Be1chenok/testTaskMicroservice/internal/service"
 )
 
@@ -28,12 +29,12 @@ func Run() {
 		log.Fatal(err)
 	}
 
-	//cache, err := redis.New(ctx, conf)
-	//if err != nil {
-	//	log.Fatalf(err.Error())
-	//}
+	cache, err := rdb.New(ctx, conf)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
 
-	repository := repository.New(db)
+	repository := repository.New(db, cache)
 	service := service.New(repository)
 	handler := handler.New(service)
 	srv := server.New(conf, handler.InitRoutes())
