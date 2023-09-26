@@ -22,16 +22,17 @@ type tokenClaims struct {
 }
 
 type AuthentificationService struct {
-	repo repository.Authentification
+	userRepo  repository.PostgresUser
+	tokenRepo repository.RedisToken
 }
 
-func NewAuthentificationService(repo repository.Authentification) *AuthentificationService {
-	return &AuthentificationService{repo: repo}
+func NewAuthentificationService(userRepo repository.PostgresUser, tokenRepo repository.RedisToken) *AuthentificationService {
+	return &AuthentificationService{userRepo: userRepo, tokenRepo: tokenRepo}
 }
 
 func (s *AuthentificationService) CreateUser(user domain.User) (int, error) {
 	user.Password = generatePasswordHash(user.Password)
-	return s.repo.CreateUser(user)
+	return s.userRepo.CreateUser(user)
 }
 
 func generatePasswordHash(password string) string {
@@ -42,7 +43,7 @@ func generatePasswordHash(password string) string {
 }
 
 func (s *AuthentificationService) GenerateToken(username, password string) (string, error) {
-	user, err := s.repo.GetUser(username, generatePasswordHash(password))
+	user, err := s.userRepo.GetUser(username, generatePasswordHash(password))
 	if err != nil {
 		return "", err
 	}

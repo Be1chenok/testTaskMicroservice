@@ -10,21 +10,21 @@ import (
 )
 
 type Repository struct {
-	Authentification
-	Validation
+	PostgresUser
+	RedisToken
 }
 
-type Validation interface {
+type RedisToken interface {
 }
 
-type Authentification interface {
+type PostgresUser interface {
 	CreateUser(user domain.User) (int, error)
 	GetUser(username, password string) (domain.User, error)
 }
 
-func New(db *sql.DB, cache *redis.Client) *Repository {
+func New(db *sql.DB, client *redis.Client) *Repository {
 	return &Repository{
-		Authentification: postgres.NewUser(db),
-		Validation:       rdb.NewUser(cache),
+		PostgresUser: postgres.NewUser(db),
+		RedisToken:   rdb.NewToken(client),
 	}
 }

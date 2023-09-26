@@ -20,17 +20,3 @@ func New(ctx context.Context, conf *config.Config) (*redis.Client, error) {
 
 	return client, nil
 }
-
-/*
-func (rdb *RedisDB) Set(ctx context.Context, key string, value interface{}) bool {
-	return true
-}
-
-func (rdb *RedisDB) Get(ctx context.Context, key string) interface{} {
-	return nil
-}
-
-func (rdb *RedisDB) Delete(ctx context.Context, key string) interface{} {
-	return rdb.client.Del(ctx, key)
-}
-*/

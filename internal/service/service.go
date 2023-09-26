@@ -7,7 +7,6 @@ import (
 
 type Service struct {
 	Authentification
-	Validation
 }
 
 type Authentification interface {
@@ -15,12 +14,8 @@ type Authentification interface {
 	GenerateToken(username, password string) (string, error)
 }
 
-type Validation interface {
-}
-
 func New(repo *repository.Repository) *Service {
 	return &Service{
-		Authentification: NewAuthentificationService(repo.Authentification),
-		Validation:       NewValidationService(repo.Validation),
+		Authentification: NewAuthentificationService(repo.PostgresUser, repo.RedisToken),
 	}
 }
