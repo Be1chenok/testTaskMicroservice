@@ -2,6 +2,8 @@ package redis
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -14,10 +16,20 @@ func NewToken(client *redis.Client) *Token {
 	return &Token{client: client}
 }
 
-func (r *Token) Set(ctx context.Context, key string, value interface{}) bool {
-	return true
+func (r *Token) SetToken(ctx context.Context, accesToken string, userId int, expiration time.Duration) error {
+	if err := r.client.Set(ctx, accesToken, userId, expiration).Err(); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (r *Token) Get(ctx context.Context, key string) interface{} {
-	return nil
+func (r *Token) GetToken(ctx context.Context, accesToken string) (interface{}, error) {
+	userId, err := r.client.Get(ctx, accesToken).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return nil, errors.New("invalid or expired token")
+		}
+		return nil, err
+	}
+	return userId, nil
 }

@@ -12,6 +12,7 @@ type Service struct {
 type Authentification interface {
 	CreateUser(user domain.User) (int, error)
 	GenerateToken(username, password string) (string, error)
+	ParseToken(token string) (int, error)
 }
 
 func New(repo *repository.Repository) *Service {

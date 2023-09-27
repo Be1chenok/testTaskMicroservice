@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
+	"time"
 
 	"github.com/Be1chenok/testTaskMicroservice/internal/domain"
 	"github.com/Be1chenok/testTaskMicroservice/internal/repository/postgres"
@@ -15,6 +17,8 @@ type Repository struct {
 }
 
 type RedisToken interface {
+	SetToken(ctx context.Context, accesToken string, userId int, expiration time.Duration) error
+	GetToken(ctx context.Context, accesToken string) (interface{}, error)
 }
 
 type PostgresUser interface {
