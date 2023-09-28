@@ -18,7 +18,7 @@ type signInInput struct {
 	Password string
 }
 
-func (h *Handler) signUp(resp http.ResponseWriter, req *http.Request) {
+func (h *Handler) register(resp http.ResponseWriter, req *http.Request) {
 	var input domain.User
 
 	bytes, err := io.ReadAll(req.Body)
@@ -46,7 +46,7 @@ func (h *Handler) signUp(resp http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(resp).Encode(response)
 }
 
-func (h *Handler) signIn(resp http.ResponseWriter, req *http.Request) {
+func (h *Handler) login(resp http.ResponseWriter, req *http.Request) {
 	var input signInInput
 
 	bytes, err := io.ReadAll(req.Body)
@@ -75,10 +75,8 @@ func (h *Handler) signIn(resp http.ResponseWriter, req *http.Request) {
 }
 
 func (h *Handler) homePage(resp http.ResponseWriter, req *http.Request) {
-	id := req.Context().Value(userCtx).(string)
-
 	response := map[string]interface{}{
-		"id": id,
+		"id": h.userId,
 	}
 	resp.Header().Set(contentType, applicationJson)
 	resp.WriteHeader(http.StatusOK)

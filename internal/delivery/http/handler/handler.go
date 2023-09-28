@@ -9,6 +9,7 @@ import (
 
 type Handler struct {
 	service *service.Service
+	userId  int
 }
 
 func New(service *service.Service) *Handler {
@@ -19,8 +20,10 @@ func New(service *service.Service) *Handler {
 
 func (h *Handler) InitRoutes() http.Handler {
 	router := mux.NewRouter()
-	router.HandleFunc("/auth/sign-up", h.signUp).Methods("POST")
-	router.HandleFunc("/auth/sign-in", h.signIn).Methods("POST")
-	router.HandleFunc("/home", h.userIdentity(h.homePage))
+	router.HandleFunc("/register", h.register).Methods("POST")
+	router.HandleFunc("/login", h.login).Methods("POST")
+	secure := router.PathPrefix("/auth").Subrouter()
+	secure.Use(h.userIdentity)
+	secure.HandleFunc("/home", h.homePage).Methods("GET")
 	return router
 }
