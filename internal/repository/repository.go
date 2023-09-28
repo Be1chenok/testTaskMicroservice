@@ -18,7 +18,7 @@ type Repository struct {
 
 type RedisToken interface {
 	SetToken(ctx context.Context, accesToken string, userId int, expiration time.Duration) error
-	GetToken(ctx context.Context, accesToken string) (interface{}, error)
+	GetToken(ctx context.Context, accesToken string) (*int, error)
 }
 
 type PostgresUser interface {

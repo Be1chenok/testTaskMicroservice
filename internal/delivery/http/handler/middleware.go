@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strings"
 )
@@ -26,7 +27,7 @@ func (h *Handler) userIdentity(next http.Handler) http.Handler {
 			return
 		}
 
-		userId, err := h.service.Authentification.ParseToken(headerParts[1])
+		userId, err := h.service.Authentification.ParseToken(context.Background(), headerParts[1])
 		if err != nil {
 			http.Error(resp, err.Error(), http.StatusUnauthorized)
 			return

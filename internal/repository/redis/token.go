@@ -23,13 +23,13 @@ func (r *Token) SetToken(ctx context.Context, accesToken string, userId int, exp
 	return nil
 }
 
-func (r *Token) GetToken(ctx context.Context, accesToken string) (interface{}, error) {
-	userId, err := r.client.Get(ctx, accesToken).Result()
+func (r *Token) GetToken(ctx context.Context, accesToken string) (*int, error) {
+	userId, err := r.client.Get(ctx, accesToken).Int()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return nil, errors.New("invalid or expired token")
 		}
 		return nil, err
 	}
-	return userId, nil
+	return &userId, nil
 }

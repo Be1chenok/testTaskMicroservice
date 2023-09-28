@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -60,7 +61,7 @@ func (h *Handler) login(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	token, err := h.service.GenerateToken(input.Username, input.Password)
+	token, err := h.service.GenerateToken(context.Background(), input.Username, input.Password)
 	if err != nil {
 		http.Error(resp, err.Error(), http.StatusInternalServerError)
 		return
