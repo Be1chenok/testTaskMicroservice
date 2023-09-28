@@ -19,6 +19,8 @@ func New(service *service.Service) *Handler {
 
 func (h *Handler) InitRoutes() http.Handler {
 	router := mux.NewRouter()
-	router.Use()
+	router.HandleFunc("/auth/sign-up", h.signUp).Methods("POST")
+	router.HandleFunc("/auth/sign-in", h.signIn).Methods("POST")
+	router.HandleFunc("/home", h.userIdentity(h.homePage))
 	return router
 }

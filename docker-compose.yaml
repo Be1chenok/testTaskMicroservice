@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  postgres:
+    restart: always
+    image: postgres:alpine3.18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - ./migration/000001_init_users.up.sql:/docker-entrypoint-initdb.d/db.sql
+    ports:
+      - 5433:5432
+
+  redis:
+    restart: always
+    image: redis:latest
+    environment:
+      REDIS_PASSWORD:
+      REDIS_PORT: 6379
+      REDIS_DATABASE: 0
+    ports:
+      - "6379:6379"

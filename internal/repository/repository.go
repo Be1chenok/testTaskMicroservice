@@ -23,7 +23,7 @@ type RedisToken interface {
 
 type PostgresUser interface {
 	CreateUser(user domain.User) (int, error)
-	GetUser(username, password string) (domain.User, error)
+	GetUser(username, passwordHash string) (domain.User, error)
 }
 
 func New(db *sql.DB, client *redis.Client) *Repository {

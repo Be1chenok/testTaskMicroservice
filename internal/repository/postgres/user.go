@@ -29,7 +29,7 @@ func (r *User) GetUser(username, password string) (domain.User, error) {
 
 	query := `SELECT id FROM users WHERE username=$1 AND password_hash=$2`
 	row := r.db.QueryRow(query, username, password)
-	err := row.Scan(&user)
+	err := row.Scan(&user.Id)
 
 	return user, err
 
