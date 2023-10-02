@@ -14,6 +14,7 @@ import (
 	"github.com/Be1chenok/testTaskMicroservice/internal/repository/postgres"
 	rdb "github.com/Be1chenok/testTaskMicroservice/internal/repository/redis"
 	"github.com/Be1chenok/testTaskMicroservice/internal/service"
+	"github.com/Be1chenok/testTaskMicroservice/pkg/hash"
 )
 
 func Run() {
@@ -29,13 +30,18 @@ func Run() {
 		log.Fatal(err)
 	}
 
-	cache, err := rdb.New(ctx, conf)
+	client, err := rdb.New(ctx, conf)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
 
-	repository := repository.New(db, cache)
-	service := service.New(repository)
+	hasher := hash.NewSHA256Hasher(conf.UserPassword.Salt)
+	tokensSigningKey := conf.Tokens.SigningKey
+	accessTokenTTL := conf.Tokens.AccessTTL
+	refreshTokenTTL := conf.Tokens.RefreshTTL
+
+	repository := repository.New(db, client)
+	service := service.New(repository, hasher, tokensSigningKey, accessTokenTTL, refreshTokenTTL)
 	handler := handler.New(service)
 	srv := server.New(conf, handler.InitRoutes())
 
@@ -53,5 +59,13 @@ func Run() {
 
 	if err := srv.Shuthdown(ctx); err != nil {
 		log.Fatalf("Failed to shut down the server: %v", err)
+	}
+
+	if err = db.Close(); err != nil {
+		log.Fatalf("Failed to close database: %v", err)
+	}
+
+	if err = client.Close(); err != nil {
+		log.Fatalf("Failed to close cache: %v", err)
 	}
 }

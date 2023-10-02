@@ -13,22 +13,33 @@ import (
 
 type Repository struct {
 	PostgresUser
-	RedisToken
+	RedisUser
 }
 
-type RedisToken interface {
-	SetToken(ctx context.Context, accesToken string, userId int, expiration time.Duration) error
-	GetToken(ctx context.Context, accesToken string) (*int, error)
+type RedisUser interface {
+	SetAccessToken(ctx context.Context, accesToken string, userId int, expiration time.Duration) error
+	GetUserIdByAccessToken(ctx context.Context, accesToken string) (int, error)
+	DeleteUserIdByAccessToken(ctx context.Context, accesToken string) error
+	DeleteAllAccessTokensByUserId(ctx context.Context, userId int) error
 }
 
 type PostgresUser interface {
 	CreateUser(user domain.User) (int, error)
-	GetUser(username, passwordHash string) (domain.User, error)
+
+	SetTokens(userId int, accessToken, refreshToken string) error
+
+	GetUserId(username, passwordHash string) (int, error)
+	GetUserIdByAccessToken(accessToken string) (int, error)
+	GetUserIdByRefreshToken(refreshToken string) (int, error)
+
+	DeleteUserIdByAccessToken(accessToken string) error
+	DeleteUserIdByRefreshToken(refreshToken string) error
+	DeleteAllTokensByUserId(userId int) error
 }
 
 func New(db *sql.DB, client *redis.Client) *Repository {
 	return &Repository{
 		PostgresUser: postgres.NewUser(db),
-		RedisToken:   rdb.NewToken(client),
+		RedisUser:    rdb.NewUser(client),
 	}
 }

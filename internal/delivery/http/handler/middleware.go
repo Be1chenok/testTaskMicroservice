@@ -2,34 +2,25 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 )
 
 const authorizationHeader = "Authorization"
 
-func (h *Handler) userIdentity(next http.Handler) http.Handler {
+func (h *Handler) userAccessIdentity(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
-		header := req.Header.Get(authorizationHeader)
-		if header == "" {
-			http.Error(resp, "empty auth header", http.StatusUnauthorized)
-			return
-		}
-
-		headerParts := strings.Split(header, " ")
-		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-			http.Error(resp, "invalid auth header", http.StatusUnauthorized)
-			return
-		}
-
-		if len(headerParts[1]) == 0 {
-			http.Error(resp, "token is empty", http.StatusUnauthorized)
-			return
-		}
-
-		userId, err := h.service.Authentification.ParseToken(context.Background(), headerParts[1])
+		token, err := h.getTokenFromHeader(req)
 		if err != nil {
 			http.Error(resp, err.Error(), http.StatusUnauthorized)
+			newErrorResponse(resp, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		userId, err := h.service.ParseToken(context.Background(), token)
+		if err != nil {
+			newErrorResponse(resp, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -37,4 +28,21 @@ func (h *Handler) userIdentity(next http.Handler) http.Handler {
 
 		next.ServeHTTP(resp, req)
 	})
+}
+
+func (h *Handler) getTokenFromHeader(req *http.Request) (string, error) {
+	header := req.Header.Get(authorizationHeader)
+	if header == "" {
+		return "", errors.New("empty auth header")
+	}
+
+	headerParts := strings.Split(header, " ")
+	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+		return "", errors.New("invalid auth header")
+	}
+
+	if len(headerParts[1]) == 0 {
+		return "", errors.New("access token is empty")
+	}
+	return headerParts[1], nil
 }

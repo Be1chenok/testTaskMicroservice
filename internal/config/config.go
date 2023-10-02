@@ -1,11 +1,17 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"time"
+
+	"github.com/spf13/viper"
+)
 
 type Config struct {
-	Server   serverConfig
-	Database databaseConfig
-	Cache    cacheConfig
+	Server       serverConfig
+	Database     databaseConfig
+	Cache        cacheConfig
+	UserPassword userPasswordConfig
+	Tokens       tokensConfig
 }
 
 type serverConfig struct {
@@ -27,6 +33,16 @@ type cacheConfig struct {
 	Port     string
 	Password string
 	DB       int
+}
+
+type userPasswordConfig struct {
+	Salt string
+}
+
+type tokensConfig struct {
+	SigningKey string
+	AccessTTL  time.Duration
+	RefreshTTL time.Duration
 }
 
 func Init() (*Config, error) {
@@ -54,6 +70,14 @@ func Init() (*Config, error) {
 			Port:     viper.GetString("REDIS_PORT"),
 			Password: viper.GetString("REDIS_PASSWORD"),
 			DB:       viper.GetInt("REDIS_DB"),
+		},
+		userPasswordConfig{
+			Salt: viper.GetString("USER_PASSWORD_SALT"),
+		},
+		tokensConfig{
+			SigningKey: viper.GetString("TOKENS_SIGNING_KEY"),
+			AccessTTL:  viper.GetDuration("ACCESS_TOKEN_TTL") * time.Second,
+			RefreshTTL: viper.GetDuration("REFRESH_TOKEN_TTL") * time.Second,
 		},
 	}, nil
 }

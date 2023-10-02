@@ -1,5 +1,6 @@
 version: '3.8'
 
+
 services:
   postgres:
     restart: always
@@ -9,9 +10,9 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     volumes:
-      - ./migration/000001_init_users.up.sql:/docker-entrypoint-initdb.d/db.sql
+        - ./migration/000001_init_users.up.sql:/docker-entrypoint-initdb.d/db.sql
     ports:
-      - 5433:5432
+        - 5433:5432
 
   redis:
     restart: always
@@ -21,4 +22,35 @@ services:
       REDIS_PORT: 6379
       REDIS_DATABASE: 0
     ports:
-      - "6379:6379"
+        - "6378:6379"  
+    
+  web:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - SERVER_HOST=127.0.0.1
+      - SERVER_PORT=8080
+
+      - PG_HOST=127.0.0.1
+      - PG_PORT=5433
+      - PG_USER=postgres
+      - PG_PASSWORD=postgres
+      - PG_BASE=postgres
+      - PG_SSL_MODE=disable
+
+      - REDIS_HOST=127.0.0.1
+      - REDIS_PORT=6378
+      - REDIS_DB=0
+
+      - USER_PASSWORD_SALT=salt
+
+      - TOKENS_SIGNING_KEY=secret
+
+      - ACCESS_TOKEN_TTL=10
+      - REFRESH_TOKEN_TTL=2592000=value

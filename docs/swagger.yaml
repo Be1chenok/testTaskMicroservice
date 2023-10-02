@@ -1,0 +1,237 @@
+basePath: /
+definitions:
+  domain.User:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  handler.signInInput:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+info:
+  contact: {}
+  title: Test Task Microservice
+  version: pre-omega
+paths:
+  /auth/fullLogout:
+    get:
+      consumes:
+      - application/json
+      description: fullLogout
+      operationId: full-logout
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: token
+          schema:
+            type: string
+        "400":
+          description: message
+          schema:
+            type: string
+        "404":
+          description: message
+          schema:
+            type: string
+        "500":
+          description: message
+          schema:
+            type: string
+        default:
+          description: message
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      tags:
+      - Authentefication
+  /auth/home:
+    get:
+      consumes:
+      - application/json
+      description: homePage
+      operationId: home-page
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: home page for user
+          schema:
+            type: string
+        "400":
+          description: message
+          schema:
+            type: string
+        "404":
+          description: message
+          schema:
+            type: string
+        "500":
+          description: message
+          schema:
+            type: string
+        default:
+          description: message
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      tags:
+      - Authentefication
+  /auth/logout:
+    get:
+      consumes:
+      - application/json
+      description: logout
+      operationId: log-out
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: token
+          schema:
+            type: string
+        "400":
+          description: message
+          schema:
+            type: string
+        "404":
+          description: message
+          schema:
+            type: string
+        "500":
+          description: message
+          schema:
+            type: string
+        default:
+          description: message
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      tags:
+      - Authentefication
+  /auth/refresh:
+    get:
+      consumes:
+      - application/json
+      description: refresh
+      operationId: refresh
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: token
+          schema:
+            type: string
+        "400":
+          description: message
+          schema:
+            type: string
+        "404":
+          description: message
+          schema:
+            type: string
+        "500":
+          description: message
+          schema:
+            type: string
+        default:
+          description: message
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      tags:
+      - Authentefication
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: create account
+      operationId: log-in
+      parameters:
+      - description: account info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.signInInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: token
+          schema:
+            type: string
+        "400":
+          description: message
+          schema:
+            type: string
+        "404":
+          description: message
+          schema:
+            type: string
+        "500":
+          description: message
+          schema:
+            type: string
+        default:
+          description: message
+          schema:
+            type: string
+      tags:
+      - Authentefication
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: create account
+      operationId: create-account
+      parameters:
+      - description: account info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/domain.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: integer
+        "400":
+          description: message
+          schema:
+            type: string
+        "404":
+          description: message
+          schema:
+            type: string
+        "500":
+          description: message
+          schema:
+            type: string
+        default:
+          description: message
+          schema:
+            type: string
+      tags:
+      - Authentefication
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
