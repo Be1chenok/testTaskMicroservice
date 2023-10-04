@@ -27,12 +27,12 @@ func Run() {
 
 	client, err := rdb.New(ctx, conf)
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("Failed to connect Redis: %v", err)
 	}
 
 	db, err := postgres.New(conf)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to connect Postgres: %v", err)
 	}
 
 	hasher := hash.NewSHA256Hasher(conf.UserPassword.Salt)

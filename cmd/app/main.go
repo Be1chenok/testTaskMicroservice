@@ -8,8 +8,9 @@ import (
 // @version pre-omega
 // @descriptiom API Server for Authorization Application
 
-// @127.0.0.1:8080
+// @host localhost:8080
 // @BasePath /
+
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization

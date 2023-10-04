@@ -5,6 +5,7 @@
         "contact": {},
         "version": "pre-omega"
     },
+    "host": "localhost:8080",
     "basePath": "/",
     "paths": {
         "/auth/fullLogout": {

@@ -15,8 +15,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
-    volumes:
-      - ./migration/000001_init_users.up.sql:/docker-entrypoint-initdb.d/db.sql
+      PGSSLMODE: disable
     ports:
       - 5433:5432
     networks:
@@ -34,7 +33,7 @@ services:
       REDIS_PORT: 6379
       REDIS_DATABASE: 0
     ports:
-      - "6379:6379"  
+      - "6378:6379"  
     networks:
       - network1
     healthcheck:
@@ -43,7 +42,6 @@ services:
       timeout: 10s
       retries: 5
 
-    
   web:
     build: .
     ports:
@@ -52,7 +50,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_healthy
+         condition: service_healthy
     networks:
       - network1
 
