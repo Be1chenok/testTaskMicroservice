@@ -25,14 +25,14 @@ func Run() {
 		log.Fatalf("Failed to initialize configuration: %v", err)
 	}
 
-	db, err := postgres.New(conf)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	client, err := rdb.New(ctx, conf)
 	if err != nil {
 		log.Fatalf(err.Error())
+	}
+
+	db, err := postgres.New(conf)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	hasher := hash.NewSHA256Hasher(conf.UserPassword.Salt)
@@ -51,6 +51,7 @@ func Run() {
 		}
 	}()
 
+	log.Print("Works fine")
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGKILL, syscall.SIGTERM)
 	<-quit
@@ -62,10 +63,10 @@ func Run() {
 	}
 
 	if err = db.Close(); err != nil {
-		log.Fatalf("Failed to close database: %v", err)
+		log.Fatalf("Failed to close postgres: %v", err)
 	}
 
 	if err = client.Close(); err != nil {
-		log.Fatalf("Failed to close cache: %v", err)
+		log.Fatalf("Failed to close redis: %v", err)
 	}
 }

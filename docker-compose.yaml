@@ -1,36 +1,58 @@
 version: '3.8'
 
+networks:
+  network1:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.1.0/24 
+    name: network1
 
 services:
   postgres:
-    restart: always
     image: postgres:alpine3.18
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     volumes:
-        - ./migration/000001_init_users.up.sql:/docker-entrypoint-initdb.d/db.sql
+      - ./migration/000001_init_users.up.sql:/docker-entrypoint-initdb.d/db.sql
     ports:
-        - 5433:5432
+      - 5433:5432
+    networks:
+      - network1
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   redis:
-    restart: always
     image: redis:latest
     environment:
       REDIS_PASSWORD: ""
       REDIS_PORT: 6379
       REDIS_DATABASE: 0
     ports:
-        - "6379:6379"  
+      - "6379:6379"  
+    networks:
+      - network1
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
     
   web:
     build: .
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
-      - redis
-    links:
-      - postgres:db1
-      - redis:db2
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - network1
+
