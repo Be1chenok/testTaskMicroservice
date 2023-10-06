@@ -9,13 +9,13 @@ import (
 )
 
 type Repository struct {
-	Postgres postgres.PGUser
-	Redis    rdb.RUser
+	PostgresUser postgres.User
+	RedisUser    rdb.User
 }
 
 func New(db *sql.DB, client *redis.Client) *Repository {
 	return &Repository{
-		Postgres: postgres.NewUser(db),
-		Redis:    rdb.NewUser(client),
+		PostgresUser: postgres.NewUser(db),
+		RedisUser:    rdb.NewUser(client),
 	}
 }

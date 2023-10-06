@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/Be1chenok/testTaskMicroservice/internal/domain"
 )
@@ -51,7 +50,7 @@ func (r *UserRepo) GetUserId(username, password string) (int, error) {
 		username, password,
 	)
 	if err := row.Scan(&userId); err != nil {
-		return 0, fmt.Errorf("Failed to find user: %v", err)
+		return 0, err
 	}
 
 	return userId, nil
@@ -65,7 +64,7 @@ func (r *UserRepo) GetUserIdByAccessToken(accessToken string) (int, error) {
 		accessToken,
 	)
 	if err := row.Scan(&userId); err != nil {
-		return 0, fmt.Errorf("Failed to find by access token: %v", err)
+		return 0, err
 	}
 
 	return userId, nil
@@ -78,7 +77,7 @@ func (r *UserRepo) GetUserIdByRefreshToken(token string) (int, error) {
 		token,
 	)
 	if err := row.Scan(&userId); err != nil {
-		return 0, fmt.Errorf("Failed to find by refresh token: %v", err)
+		return 0, err
 	}
 
 	return userId, nil
@@ -92,7 +91,7 @@ func (r *UserRepo) SetTokens(userId int, accessToken, refreshToken string) error
 		refreshToken,
 	)
 	if err != nil {
-		return fmt.Errorf("Failed to set tokens: %v", err)
+		return err
 	}
 
 	return nil
@@ -104,7 +103,7 @@ func (r *UserRepo) DeleteUserIdByAccessToken(accessToken string) error {
 		accessToken,
 	)
 	if err != nil {
-		return fmt.Errorf("Failed to delete by access token: %v", err)
+		return err
 	}
 
 	return nil
@@ -116,7 +115,7 @@ func (r *UserRepo) DeleteUserIdByRefreshToken(refreshToken string) error {
 		refreshToken,
 	)
 	if err != nil {
-		return fmt.Errorf("Failed to delete by refresh token: %v", err)
+		return err
 	}
 
 	return nil
@@ -128,7 +127,7 @@ func (r *UserRepo) DeleteAllTokensByUserId(userId int) error {
 		userId,
 	)
 	if err != nil {
-		return fmt.Errorf("Failed to delete by user id: %v", err)
+		return err
 	}
 
 	return nil

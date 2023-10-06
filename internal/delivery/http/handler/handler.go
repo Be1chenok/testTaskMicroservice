@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/Be1chenok/testTaskMicroservice/internal/service"
@@ -40,14 +39,6 @@ func (h *Handler) InitRoutes() http.Handler {
 	secure.HandleFunc("/logout", h.logOut).Methods("GET")
 	secure.HandleFunc("/fullLogout", h.fullLogOut).Methods("GET")
 	secure.HandleFunc("/refresh", h.refresh).Methods("GET")
-	return router
-}
 
-func newErrorResponse(resp http.ResponseWriter, statusCode int, message string) {
-	response := map[string]interface{}{
-		"message": message,
-	}
-	resp.Header().Set(contentType, applicationJson)
-	resp.WriteHeader(statusCode)
-	json.NewEncoder(resp).Encode(response)
+	return router
 }

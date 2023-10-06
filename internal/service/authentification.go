@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/Be1chenok/testTaskMicroservice/internal/domain"
@@ -53,7 +53,7 @@ func NewAuthentificationService(
 func (s *AuthentificationService) SignUp(input model.SignUpInput) (int, error) {
 	passwordHash, err := s.hashser.Hash(input.Password)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("Failed to hash password: %v", err)
 	}
 
 	user := domain.User{
@@ -62,25 +62,38 @@ func (s *AuthentificationService) SignUp(input model.SignUpInput) (int, error) {
 		Password: passwordHash,
 	}
 
-	return s.postgresUser.CreateUser(user)
+	userId, err := s.postgresUser.CreateUser(user)
+	if err != nil {
+		return 0, fmt.Errorf("Failed to create user: %v", err)
+	}
+	return userId, nil
 }
 
 func (s *AuthentificationService) SignIn(ctx context.Context, input model.SignInInput) (model.Tokens, error) {
 	passwordHash, err := s.hashser.Hash(input.Password)
 	if err != nil {
-		return model.Tokens{}, err
+		return model.Tokens{}, fmt.Errorf("Failed to hash password: %v", err)
 	}
 
 	userId, err := s.postgresUser.GetUserId(input.Username, passwordHash)
 	if err != nil {
-		return model.Tokens{}, err
+		return model.Tokens{}, fmt.Errorf("Failed to get user id: %v", err)
 	}
 
-	return s.createSession(ctx, userId)
+	tokens, err := s.createSession(ctx, userId)
+	if err != nil {
+		return model.Tokens{}, fmt.Errorf("Failed to create session: %v", err)
+	}
+
+	return tokens, nil
 }
 
 func (s *AuthentificationService) SignOut(ctx context.Context, accessToken string) error {
-	return s.deleteUserIdByAccessToken(ctx, accessToken)
+	if err := s.deleteUserIdByAccessToken(ctx, accessToken); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *AuthentificationService) FullSignOut(ctx context.Context, accesToken string) error {
@@ -89,19 +102,29 @@ func (s *AuthentificationService) FullSignOut(ctx context.Context, accesToken st
 		return err
 	}
 
-	return s.deleteAllTokensByUserId(ctx, userId)
+	if err = s.deleteAllTokensByUserId(ctx, userId); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *AuthentificationService) RefreshTokens(ctx context.Context, refreshToken string) (model.Tokens, error) {
 	userId, err := s.postgresUser.GetUserIdByRefreshToken(refreshToken)
 	if err != nil {
-		return model.Tokens{}, err
+		return model.Tokens{}, fmt.Errorf("Failed to get user ID by refresh token: %v", err)
 	}
 	err = s.postgresUser.DeleteUserIdByRefreshToken(refreshToken)
 	if err != nil {
-		return model.Tokens{}, err
+		return model.Tokens{}, fmt.Errorf("Failed to delete user ID by refresh token: %v", err)
 	}
-	return s.createSession(ctx, userId)
+
+	tokens, err := s.createSession(ctx, userId)
+	if err != nil {
+		return model.Tokens{}, fmt.Errorf("Failed to create session: %v", err)
+	}
+
+	return tokens, nil
 }
 
 func (s *AuthentificationService) ParseToken(ctx context.Context, token string) (int, error) {
@@ -109,41 +132,41 @@ func (s *AuthentificationService) ParseToken(ctx context.Context, token string) 
 	if err != nil {
 		userId, err = s.postgresUser.GetUserIdByRefreshToken(token)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("Failed to get user ID by token: %v", err)
 		}
 	}
 
-	parsedToken, err := jwt.ParseWithClaims(token, &model.AccesTokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+	parsedToken, err := jwt.ParseWithClaims(token, &model.AccessTokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("invalid signing method")
+			return nil, fmt.Errorf("Invalid signing method")
 		}
 		return []byte(s.tokensSigningKey), nil
 	})
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("Failed to parsing token: %v", err)
 	}
 
-	claims, ok := parsedToken.Claims.(*model.AccesTokenClaims)
+	claims, ok := parsedToken.Claims.(*model.AccessTokenClaims)
 	if !ok {
-		return 0, errors.New("token claims are not of type *tokenClaims")
+		return 0, fmt.Errorf("Token claims are not of type *tokenClaims")
 	}
 
 	if claims.UserId != userId {
-		return 0, errors.New("token does not match the stored user ID")
+		return 0, fmt.Errorf("Token does not match the stored user ID")
 	}
 
 	return claims.UserId, nil
 }
 
 func (s *AuthentificationService) createSession(ctx context.Context, userId int) (model.Tokens, error) {
-	accessToken, err := s.newToken(userId, s.accessTokenTTL)
+	accessToken, err := s.createToken(userId, s.accessTokenTTL)
 	if err != nil {
-		return model.Tokens{}, err
+		return model.Tokens{}, fmt.Errorf("Failed to create access token: %v", err)
 	}
 
-	refreshToken, err := s.newToken(userId, s.refreshTokenTTL)
+	refreshToken, err := s.createToken(userId, s.refreshTokenTTL)
 	if err != nil {
-		return model.Tokens{}, err
+		return model.Tokens{}, fmt.Errorf("Failed to create refresh token: %v", err)
 	}
 
 	if err = s.setTokens(ctx, userId, accessToken, refreshToken); err != nil {
@@ -156,8 +179,8 @@ func (s *AuthentificationService) createSession(ctx context.Context, userId int)
 		nil
 }
 
-func (s *AuthentificationService) newToken(userId int, tokenTTL time.Duration) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &model.AccesTokenClaims{
+func (s *AuthentificationService) createToken(userId int, tokenTTL time.Duration) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &model.AccessTokenClaims{
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(tokenTTL).Unix(),
 			IssuedAt:  time.Now().Unix(),
@@ -165,7 +188,12 @@ func (s *AuthentificationService) newToken(userId int, tokenTTL time.Duration) (
 		UserId: userId,
 	})
 
-	return token.SignedString([]byte(s.tokensSigningKey))
+	signedToken, err := token.SignedString([]byte(s.tokensSigningKey))
+	if err != nil {
+		return "", fmt.Errorf("Failed to signing token")
+	}
+
+	return signedToken, nil
 }
 
 func (s *AuthentificationService) getUserIdByAccessToken(ctx context.Context, token string) (int, error) {
@@ -173,7 +201,7 @@ func (s *AuthentificationService) getUserIdByAccessToken(ctx context.Context, to
 	if err != nil {
 		userId, err = s.postgresUser.GetUserIdByAccessToken(token)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("Failed to get user ID by access token: %v", err)
 		}
 	}
 
@@ -182,11 +210,11 @@ func (s *AuthentificationService) getUserIdByAccessToken(ctx context.Context, to
 
 func (s *AuthentificationService) setTokens(ctx context.Context, userId int, accessToken, refreshToken string) error {
 	if err := s.postgresUser.SetTokens(userId, accessToken, refreshToken); err != nil {
-		return err
+		return fmt.Errorf("Failed to set access and refresh tokens: %v", err)
 	}
 
 	if err := s.redisUser.SetAccessToken(ctx, accessToken, userId, s.accessTokenTTL); err != nil {
-		return err
+		return fmt.Errorf("Failed to set access token: %v", err)
 	}
 
 	return nil
@@ -194,11 +222,12 @@ func (s *AuthentificationService) setTokens(ctx context.Context, userId int, acc
 
 func (s *AuthentificationService) deleteAllTokensByUserId(ctx context.Context, userId int) error {
 	if err := s.postgresUser.DeleteAllTokensByUserId(userId); err != nil {
-		return err
+		return fmt.Errorf("Failed to delete all tokens by user ID: %v", err)
 	}
 
-	if err := s.redisUser.DeleteAllAccessTokensByUserId(ctx, userId); err != nil {
-		return err
+	_, err := s.redisUser.DeleteAllAccessTokensByUserId(ctx, userId)
+	if err != nil {
+		return fmt.Errorf("Failed to delete access tokens by user ID: %v", err)
 	}
 
 	return nil
@@ -206,11 +235,11 @@ func (s *AuthentificationService) deleteAllTokensByUserId(ctx context.Context, u
 
 func (s *AuthentificationService) deleteUserIdByAccessToken(ctx context.Context, accessToken string) error {
 	if err := s.postgresUser.DeleteUserIdByAccessToken(accessToken); err != nil {
-		return err
+		return fmt.Errorf("Failed to delete user ID by access token: %v", err)
 	}
 
 	if err := s.redisUser.DeleteUserIdByAccessToken(ctx, accessToken); err != nil {
-		return err
+		return fmt.Errorf("Failed to delete user ID by access token: %v", err)
 	}
 
 	return nil

@@ -1,15 +1,21 @@
-run:
+ifeq ("$(wildcard .env)",".env")
+	include .env
+endif
+
+DATABASE_URL="postgres://${PG_USER}:${PG_PASSWORD}@${PG_INTERNAL_HOST}:${PG_INTERNAL_PORT}/${PG_BASE}?sslmode=${PG_SSL_MODE}"
+
+run-containers:
 	docker-compose -f docker-compose.yaml up --force-recreate
 
-swag:
+swag-init:
 	swag init -g cmd/app/main.go
 
-migup:
-	migrate -path ./migration -database 'postgres://postgres:postgres@0.0.0.0:5433/postgres?sslmode=disable' up
+migrate-up:
+	migrate -path ./migration -database ${DATABASE_URL} up
 
-migdown:
-	echo y | migrate -path ./migration -database 'postgres://postgres:postgres@0.0.0.0:5433/postgres?sslmode=disable' down
+migrate-down:
+	echo y | migrate -path ./migration -database ${DATABASE_URL} down
 
-rm:
-	docker-compose -f docker-compose.yaml stop \
-	&& docker-compose -f docker-compose.yaml rm
+rm-containers:
+	echo docker-compose -f docker-compose.yaml stop \
+	&& echo y | docker-compose -f docker-compose.yaml rm

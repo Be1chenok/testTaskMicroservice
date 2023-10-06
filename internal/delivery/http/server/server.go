@@ -25,9 +25,15 @@ func New(conf *config.Config, handler http.Handler) *Server {
 }
 
 func (s *Server) Start() error {
-	return s.httpServer.ListenAndServe()
+	if err := s.httpServer.ListenAndServe(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *Server) Shuthdown(ctx context.Context) error {
-	return s.httpServer.Shutdown(ctx)
+	if err := s.httpServer.Shutdown(ctx); err != nil {
+		return err
+	}
+	return nil
 }

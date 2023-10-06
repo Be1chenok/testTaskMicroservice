@@ -18,7 +18,7 @@ type Tokens struct {
 	RefreshToken string
 }
 
-type AccesTokenClaims struct {
+type AccessTokenClaims struct {
 	jwt.StandardClaims
 	UserId int
 }

@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -14,7 +15,7 @@ type User interface {
 	GetUserIdByAccessToken(ctx context.Context, accesToken string) (int, error)
 
 	DeleteUserIdByAccessToken(ctx context.Context, accesToken string) error
-	DeleteAllAccessTokensByUserId(ctx context.Context, userId int) error
+	DeleteAllAccessTokensByUserId(ctx context.Context, userId int) (int, error)
 }
 
 type UserRepo struct {
@@ -39,7 +40,7 @@ func (r *UserRepo) GetUserIdByAccessToken(ctx context.Context, accessToken strin
 	userId, err := r.client.Get(ctx, accessToken).Int()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			return 0, errors.New("invalid or expired token")
+			return 0, fmt.Errorf("Invalid or expired token")
 		}
 		return 0, err
 	}
@@ -49,32 +50,37 @@ func (r *UserRepo) GetUserIdByAccessToken(ctx context.Context, accessToken strin
 
 func (r *UserRepo) DeleteUserIdByAccessToken(ctx context.Context, accessToken string) error {
 	if err := r.client.Del(ctx, accessToken).Err(); err != nil {
-		return errors.New("invalid or expire token")
+		if errors.Is(err, redis.Nil) {
+			return fmt.Errorf("Invalid or expired token")
+		}
+		return err
 	}
 
 	return nil
 }
 
-func (r *UserRepo) DeleteAllAccessTokensByUserId(ctx context.Context, userId int) error {
+func (r *UserRepo) DeleteAllAccessTokensByUserId(ctx context.Context, userId int) (int, error) {
 	keys, err := r.client.Keys(ctx, "*").Result()
 	if err != nil {
-		return err
+		return 0, err
 	}
 	var deletedKeys int
 	for _, key := range keys {
 		value, err := r.client.Get(ctx, key).Int()
 		if err != nil {
-			return err
+			return deletedKeys, err
 		}
 
 		if value == userId {
 			if err := r.client.Del(ctx, key).Err(); err != nil {
-				return err
+				if errors.Is(err, redis.Nil) {
+					return deletedKeys, fmt.Errorf("Invalid or expired token")
+				}
+				return deletedKeys, err
 			}
 			deletedKeys++
 		}
 	}
 
-	return nil
-
+	return deletedKeys, nil
 }

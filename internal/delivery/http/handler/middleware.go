@@ -2,7 +2,7 @@ package handler
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -13,7 +13,6 @@ func (h *Handler) userAccessIdentity(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 		token, err := h.getTokenFromHeader(req)
 		if err != nil {
-			http.Error(resp, err.Error(), http.StatusUnauthorized)
 			newErrorResponse(resp, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -33,16 +32,16 @@ func (h *Handler) userAccessIdentity(next http.Handler) http.Handler {
 func (h *Handler) getTokenFromHeader(req *http.Request) (string, error) {
 	header := req.Header.Get(authorizationHeader)
 	if header == "" {
-		return "", errors.New("empty auth header")
+		return "", fmt.Errorf("Empty auth header")
 	}
 
 	headerParts := strings.Split(header, " ")
 	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-		return "", errors.New("invalid auth header")
+		return "", fmt.Errorf("Invalid auth header")
 	}
 
 	if len(headerParts[1]) == 0 {
-		return "", errors.New("access token is empty")
+		return "", fmt.Errorf("token is empty")
 	}
 	return headerParts[1], nil
 }
