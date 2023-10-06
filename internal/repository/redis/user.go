@@ -3,28 +3,31 @@ package redis
 import (
 	"context"
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
-type User struct {
-	client *redis.Client
-	mutex  *sync.Mutex
+type User interface {
+	SetAccessToken(ctx context.Context, accesToken string, userId int, expiration time.Duration) error
+
+	GetUserIdByAccessToken(ctx context.Context, accesToken string) (int, error)
+
+	DeleteUserIdByAccessToken(ctx context.Context, accesToken string) error
+	DeleteAllAccessTokensByUserId(ctx context.Context, userId int) error
 }
 
-func NewUser(client *redis.Client) *User {
-	return &User{
+type UserRepo struct {
+	client *redis.Client
+}
+
+func NewUser(client *redis.Client) *UserRepo {
+	return &UserRepo{
 		client: client,
-		mutex:  &sync.Mutex{},
 	}
 }
 
-func (r *User) SetAccessToken(ctx context.Context, accessToken string, userId int, expiration time.Duration) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
+func (r *UserRepo) SetAccessToken(ctx context.Context, accessToken string, userId int, expiration time.Duration) error {
 	if err := r.client.Set(ctx, accessToken, userId, expiration).Err(); err != nil {
 		return err
 	}
@@ -32,10 +35,7 @@ func (r *User) SetAccessToken(ctx context.Context, accessToken string, userId in
 	return nil
 }
 
-func (r *User) GetUserIdByAccessToken(ctx context.Context, accessToken string) (int, error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
+func (r *UserRepo) GetUserIdByAccessToken(ctx context.Context, accessToken string) (int, error) {
 	userId, err := r.client.Get(ctx, accessToken).Int()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -47,10 +47,7 @@ func (r *User) GetUserIdByAccessToken(ctx context.Context, accessToken string) (
 	return userId, nil
 }
 
-func (r *User) DeleteUserIdByAccessToken(ctx context.Context, accessToken string) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
+func (r *UserRepo) DeleteUserIdByAccessToken(ctx context.Context, accessToken string) error {
 	if err := r.client.Del(ctx, accessToken).Err(); err != nil {
 		return errors.New("invalid or expire token")
 	}
@@ -58,10 +55,7 @@ func (r *User) DeleteUserIdByAccessToken(ctx context.Context, accessToken string
 	return nil
 }
 
-func (r *User) DeleteAllAccessTokensByUserId(ctx context.Context, userId int) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
+func (r *UserRepo) DeleteAllAccessTokensByUserId(ctx context.Context, userId int) error {
 	keys, err := r.client.Keys(ctx, "*").Result()
 	if err != nil {
 		return err

@@ -8,18 +8,13 @@ import (
 	"strings"
 
 	"github.com/Be1chenok/testTaskMicroservice/internal/domain"
-	"github.com/Be1chenok/testTaskMicroservice/internal/service"
+	"github.com/Be1chenok/testTaskMicroservice/internal/model"
 )
 
 const (
 	contentType     = "Content-Type"
 	applicationJson = "application/json"
 )
-
-type signInInput struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
 
 // @Sumary Register
 // @Tags Authentefication
@@ -47,7 +42,7 @@ func (h *Handler) register(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	userId, err := h.service.SignUp(service.SignUpInput{
+	userId, err := h.service.SignUp(model.SignUpInput{
 		Email:    input.Email,
 		Username: input.Username,
 		Password: input.Password,
@@ -78,7 +73,7 @@ func (h *Handler) register(resp http.ResponseWriter, req *http.Request) {
 // @Failure default {string} string "message"
 // @Router /login [post]
 func (h *Handler) login(resp http.ResponseWriter, req *http.Request) {
-	var input signInInput
+	var input model.SignInInput
 
 	bytes, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -91,7 +86,7 @@ func (h *Handler) login(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	tokens, err := h.service.SignIn(context.Background(), service.SignInInput{
+	tokens, err := h.service.SignIn(context.Background(), model.SignInInput{
 		Username: input.Username,
 		Password: input.Password,
 	})

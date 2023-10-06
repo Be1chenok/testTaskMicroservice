@@ -36,12 +36,9 @@ func Run() {
 	}
 
 	hasher := hash.NewSHA256Hasher(conf.UserPassword.Salt)
-	tokensSigningKey := conf.Tokens.SigningKey
-	accessTokenTTL := conf.Tokens.AccessTTL
-	refreshTokenTTL := conf.Tokens.RefreshTTL
 
 	repository := repository.New(db, client)
-	service := service.New(repository, hasher, tokensSigningKey, accessTokenTTL, refreshTokenTTL)
+	service := service.New(repository, hasher, conf.Tokens.SigningKey, conf.Tokens.AccessTTL, conf.Tokens.RefreshTTL)
 	handler := handler.New(service)
 	srv := server.New(conf, handler.InitRoutes())
 

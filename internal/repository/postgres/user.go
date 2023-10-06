@@ -2,27 +2,36 @@ package postgres
 
 import (
 	"database/sql"
-	"sync"
+	"fmt"
 
 	"github.com/Be1chenok/testTaskMicroservice/internal/domain"
 )
 
-type User struct {
-	db    *sql.DB
-	mutex *sync.Mutex
+type User interface {
+	CreateUser(user domain.User) (int, error)
+
+	SetTokens(userId int, accessToken, refreshToken string) error
+
+	GetUserId(username, passwordHash string) (int, error)
+	GetUserIdByAccessToken(accessToken string) (int, error)
+	GetUserIdByRefreshToken(refreshToken string) (int, error)
+
+	DeleteUserIdByAccessToken(accessToken string) error
+	DeleteUserIdByRefreshToken(refreshToken string) error
+	DeleteAllTokensByUserId(userId int) error
 }
 
-func NewUser(db *sql.DB) *User {
-	return &User{
-		db:    db,
-		mutex: &sync.Mutex{},
+type UserRepo struct {
+	db *sql.DB
+}
+
+func NewUser(db *sql.DB) *UserRepo {
+	return &UserRepo{
+		db: db,
 	}
 }
 
-func (r *User) CreateUser(user domain.User) (int, error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
+func (r *UserRepo) CreateUser(user domain.User) (int, error) {
 	var id int
 
 	query := `INSERT INTO users (email, username, password_hash) values ($1, $2, $3) RETURNING id`
@@ -34,75 +43,93 @@ func (r *User) CreateUser(user domain.User) (int, error) {
 	return id, nil
 }
 
-func (r *User) GetUserId(username, password string) (int, error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
+func (r *UserRepo) GetUserId(username, password string) (int, error) {
 	var userId int
 
-	query := `SELECT id FROM users WHERE username=$1 AND password_hash=$2`
-	row := r.db.QueryRow(query, username, password)
-	err := row.Scan(&userId)
+	row := r.db.QueryRow(
+		`SELECT id FROM users WHERE username=$1 AND password_hash=$2`,
+		username, password,
+	)
+	if err := row.Scan(&userId); err != nil {
+		return 0, fmt.Errorf("Failed to find user: %v", err)
+	}
 
-	return userId, err
+	return userId, nil
 }
 
-func (r *User) GetUserIdByAccessToken(accessToken string) (int, error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
+func (r *UserRepo) GetUserIdByAccessToken(accessToken string) (int, error) {
 	var userId int
 
-	query := `SELECT user_id FROM tokens WHERE access_token=$1`
-	row := r.db.QueryRow(query, accessToken)
-	err := row.Scan(&userId)
+	row := r.db.QueryRow(
+		`SELECT user_id FROM tokens WHERE access_token=$1`,
+		accessToken,
+	)
+	if err := row.Scan(&userId); err != nil {
+		return 0, fmt.Errorf("Failed to find by access token: %v", err)
+	}
 
-	return userId, err
+	return userId, nil
 }
-func (r *User) GetUserIdByRefreshToken(token string) (int, error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
+func (r *UserRepo) GetUserIdByRefreshToken(token string) (int, error) {
 	var userId int
 
-	query := `SELECT user_id FROM tokens WHERE refresh_token=$1`
-	row := r.db.QueryRow(query, token)
-	err := row.Scan(&userId)
+	row := r.db.QueryRow(
+		`SELECT user_id FROM tokens WHERE refresh_token=$1`,
+		token,
+	)
+	if err := row.Scan(&userId); err != nil {
+		return 0, fmt.Errorf("Failed to find by refresh token: %v", err)
+	}
 
-	return userId, err
+	return userId, nil
 }
 
-func (r *User) SetTokens(userId int, accessToken, refreshToken string) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+func (r *UserRepo) SetTokens(userId int, accessToken, refreshToken string) error {
+	_, err := r.db.Exec(
+		`INSERT INTO tokens (user_id, access_token, refresh_token) values ($1,$2,$3)`,
+		userId,
+		accessToken,
+		refreshToken,
+	)
+	if err != nil {
+		return fmt.Errorf("Failed to set tokens: %v", err)
+	}
 
-	query := `INSERT INTO tokens (user_id, access_token, refresh_token) values ($1,$2,$3)`
-
-	return r.db.QueryRow(query, userId, accessToken, refreshToken).Err()
+	return nil
 }
 
-func (r *User) DeleteUserIdByAccessToken(accessToken string) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+func (r *UserRepo) DeleteUserIdByAccessToken(accessToken string) error {
+	_, err := r.db.Exec(
+		`DELETE FROM tokens WHERE access_token=$1`,
+		accessToken,
+	)
+	if err != nil {
+		return fmt.Errorf("Failed to delete by access token: %v", err)
+	}
 
-	query := `DELETE FROM tokens WHERE access_token=$1`
-
-	return r.db.QueryRow(query, accessToken).Err()
-}
-func (r *User) DeleteUserIdByRefreshToken(refreshToken string) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
-	query := `DELETE FROM tokens WHERE refresh_token=$1`
-
-	return r.db.QueryRow(query, refreshToken).Err()
+	return nil
 }
 
-func (r *User) DeleteAllTokensByUserId(userId int) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+func (r *UserRepo) DeleteUserIdByRefreshToken(refreshToken string) error {
+	_, err := r.db.Exec(
+		`DELETE FROM tokens WHERE refresh_token=$1`,
+		refreshToken,
+	)
+	if err != nil {
+		return fmt.Errorf("Failed to delete by refresh token: %v", err)
+	}
 
-	query := `DELETE FROM tokens WHERE user_id=$1`
+	return nil
+}
 
-	return r.db.QueryRow(query, userId).Err()
+func (r *UserRepo) DeleteAllTokensByUserId(userId int) error {
+	_, err := r.db.Exec(
+		`DELETE FROM tokens WHERE user_id=$1`,
+		userId,
+	)
+	if err != nil {
+		return fmt.Errorf("Failed to delete by user id: %v", err)
+	}
+
+	return nil
 }

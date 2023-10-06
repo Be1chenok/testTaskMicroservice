@@ -6,30 +6,43 @@ import (
 	"time"
 
 	"github.com/Be1chenok/testTaskMicroservice/internal/domain"
-	"github.com/Be1chenok/testTaskMicroservice/internal/repository"
+	"github.com/Be1chenok/testTaskMicroservice/internal/model"
+	"github.com/Be1chenok/testTaskMicroservice/internal/repository/postgres"
+	rdb "github.com/Be1chenok/testTaskMicroservice/internal/repository/redis"
 	"github.com/Be1chenok/testTaskMicroservice/pkg/hash"
 	"github.com/golang-jwt/jwt"
 )
 
+type Authentification interface {
+	SignUp(input model.SignUpInput) (int, error)
+	SignIn(ctx context.Context, input model.SignInInput) (model.Tokens, error)
+
+	RefreshTokens(ctx context.Context, refreshToken string) (model.Tokens, error)
+	ParseToken(ctx context.Context, accesToken string) (int, error)
+
+	SignOut(ctx context.Context, accessToken string) error
+	FullSignOut(ctx context.Context, accesToken string) error
+}
+
 type AuthentificationService struct {
-	postgresUserRepo repository.PostgresUser
-	redisUserRepo    repository.RedisUser
-	hashser          hash.PasswordHash
+	postgresUser     postgres.User
+	redisUser        rdb.User
+	hashser          *hash.SHA256Hasher
 	tokensSigningKey string
 	accessTokenTTL   time.Duration
 	refreshTokenTTL  time.Duration
 }
 
 func NewAuthentificationService(
-	postgresUserRepo repository.PostgresUser,
-	redisUserRepo repository.RedisUser,
-	hasher hash.PasswordHash,
+	postgresUser postgres.User,
+	redisUser rdb.User,
+	hasher *hash.SHA256Hasher,
 	tokensSigningKey string,
 	accessTokenTTL, refreshTokenTTL time.Duration) *AuthentificationService {
 
 	return &AuthentificationService{
-		postgresUserRepo: postgresUserRepo,
-		redisUserRepo:    redisUserRepo,
+		postgresUser:     postgresUser,
+		redisUser:        redisUser,
 		hashser:          hasher,
 		tokensSigningKey: tokensSigningKey,
 		accessTokenTTL:   accessTokenTTL,
@@ -37,7 +50,7 @@ func NewAuthentificationService(
 	}
 }
 
-func (s *AuthentificationService) SignUp(input SignUpInput) (int, error) {
+func (s *AuthentificationService) SignUp(input model.SignUpInput) (int, error) {
 	passwordHash, err := s.hashser.Hash(input.Password)
 	if err != nil {
 		return 0, err
@@ -49,18 +62,18 @@ func (s *AuthentificationService) SignUp(input SignUpInput) (int, error) {
 		Password: passwordHash,
 	}
 
-	return s.postgresUserRepo.CreateUser(user)
+	return s.postgresUser.CreateUser(user)
 }
 
-func (s *AuthentificationService) SignIn(ctx context.Context, input SignInInput) (Tokens, error) {
+func (s *AuthentificationService) SignIn(ctx context.Context, input model.SignInInput) (model.Tokens, error) {
 	passwordHash, err := s.hashser.Hash(input.Password)
 	if err != nil {
-		return Tokens{}, err
+		return model.Tokens{}, err
 	}
 
-	userId, err := s.postgresUserRepo.GetUserId(input.Username, passwordHash)
+	userId, err := s.postgresUser.GetUserId(input.Username, passwordHash)
 	if err != nil {
-		return Tokens{}, err
+		return model.Tokens{}, err
 	}
 
 	return s.createSession(ctx, userId)
@@ -79,14 +92,14 @@ func (s *AuthentificationService) FullSignOut(ctx context.Context, accesToken st
 	return s.deleteAllTokensByUserId(ctx, userId)
 }
 
-func (s *AuthentificationService) RefreshTokens(ctx context.Context, refreshToken string) (Tokens, error) {
-	userId, err := s.postgresUserRepo.GetUserIdByRefreshToken(refreshToken)
+func (s *AuthentificationService) RefreshTokens(ctx context.Context, refreshToken string) (model.Tokens, error) {
+	userId, err := s.postgresUser.GetUserIdByRefreshToken(refreshToken)
 	if err != nil {
-		return Tokens{}, err
+		return model.Tokens{}, err
 	}
-	err = s.postgresUserRepo.DeleteUserIdByRefreshToken(refreshToken)
+	err = s.postgresUser.DeleteUserIdByRefreshToken(refreshToken)
 	if err != nil {
-		return Tokens{}, err
+		return model.Tokens{}, err
 	}
 	return s.createSession(ctx, userId)
 }
@@ -94,13 +107,13 @@ func (s *AuthentificationService) RefreshTokens(ctx context.Context, refreshToke
 func (s *AuthentificationService) ParseToken(ctx context.Context, token string) (int, error) {
 	userId, err := s.getUserIdByAccessToken(ctx, token)
 	if err != nil {
-		userId, err = s.postgresUserRepo.GetUserIdByRefreshToken(token)
+		userId, err = s.postgresUser.GetUserIdByRefreshToken(token)
 		if err != nil {
 			return 0, err
 		}
 	}
 
-	parsedToken, err := jwt.ParseWithClaims(token, &accesTokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+	parsedToken, err := jwt.ParseWithClaims(token, &model.AccesTokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid signing method")
 		}
@@ -110,7 +123,7 @@ func (s *AuthentificationService) ParseToken(ctx context.Context, token string) 
 		return 0, err
 	}
 
-	claims, ok := parsedToken.Claims.(*accesTokenClaims)
+	claims, ok := parsedToken.Claims.(*model.AccesTokenClaims)
 	if !ok {
 		return 0, errors.New("token claims are not of type *tokenClaims")
 	}
@@ -122,43 +135,43 @@ func (s *AuthentificationService) ParseToken(ctx context.Context, token string) 
 	return claims.UserId, nil
 }
 
-func (s *AuthentificationService) createSession(ctx context.Context, userId int) (Tokens, error) {
+func (s *AuthentificationService) createSession(ctx context.Context, userId int) (model.Tokens, error) {
 	accessToken, err := s.newToken(userId, s.accessTokenTTL)
 	if err != nil {
-		return Tokens{}, err
+		return model.Tokens{}, err
 	}
 
 	refreshToken, err := s.newToken(userId, s.refreshTokenTTL)
 	if err != nil {
-		return Tokens{}, err
+		return model.Tokens{}, err
 	}
 
 	if err = s.setTokens(ctx, userId, accessToken, refreshToken); err != nil {
-		return Tokens{}, err
+		return model.Tokens{}, err
 	}
 
-	return Tokens{
+	return model.Tokens{
 			AccesToken:   accessToken,
 			RefreshToken: refreshToken},
 		nil
 }
 
 func (s *AuthentificationService) newToken(userId int, tokenTTL time.Duration) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &accesTokenClaims{
-		jwt.StandardClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &model.AccesTokenClaims{
+		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(tokenTTL).Unix(),
 			IssuedAt:  time.Now().Unix(),
 		},
-		userId,
+		UserId: userId,
 	})
 
 	return token.SignedString([]byte(s.tokensSigningKey))
 }
 
 func (s *AuthentificationService) getUserIdByAccessToken(ctx context.Context, token string) (int, error) {
-	userId, err := s.redisUserRepo.GetUserIdByAccessToken(ctx, token)
+	userId, err := s.redisUser.GetUserIdByAccessToken(ctx, token)
 	if err != nil {
-		userId, err = s.postgresUserRepo.GetUserIdByAccessToken(token)
+		userId, err = s.postgresUser.GetUserIdByAccessToken(token)
 		if err != nil {
 			return 0, err
 		}
@@ -168,11 +181,11 @@ func (s *AuthentificationService) getUserIdByAccessToken(ctx context.Context, to
 }
 
 func (s *AuthentificationService) setTokens(ctx context.Context, userId int, accessToken, refreshToken string) error {
-	if err := s.postgresUserRepo.SetTokens(userId, accessToken, refreshToken); err != nil {
+	if err := s.postgresUser.SetTokens(userId, accessToken, refreshToken); err != nil {
 		return err
 	}
 
-	if err := s.redisUserRepo.SetAccessToken(ctx, accessToken, userId, s.accessTokenTTL); err != nil {
+	if err := s.redisUser.SetAccessToken(ctx, accessToken, userId, s.accessTokenTTL); err != nil {
 		return err
 	}
 
@@ -180,11 +193,11 @@ func (s *AuthentificationService) setTokens(ctx context.Context, userId int, acc
 }
 
 func (s *AuthentificationService) deleteAllTokensByUserId(ctx context.Context, userId int) error {
-	if err := s.postgresUserRepo.DeleteAllTokensByUserId(userId); err != nil {
+	if err := s.postgresUser.DeleteAllTokensByUserId(userId); err != nil {
 		return err
 	}
 
-	if err := s.redisUserRepo.DeleteAllAccessTokensByUserId(ctx, userId); err != nil {
+	if err := s.redisUser.DeleteAllAccessTokensByUserId(ctx, userId); err != nil {
 		return err
 	}
 
@@ -192,11 +205,11 @@ func (s *AuthentificationService) deleteAllTokensByUserId(ctx context.Context, u
 }
 
 func (s *AuthentificationService) deleteUserIdByAccessToken(ctx context.Context, accessToken string) error {
-	if err := s.postgresUserRepo.DeleteUserIdByAccessToken(accessToken); err != nil {
+	if err := s.postgresUser.DeleteUserIdByAccessToken(accessToken); err != nil {
 		return err
 	}
 
-	if err := s.redisUserRepo.DeleteUserIdByAccessToken(ctx, accessToken); err != nil {
+	if err := s.redisUser.DeleteUserIdByAccessToken(ctx, accessToken); err != nil {
 		return err
 	}
 
