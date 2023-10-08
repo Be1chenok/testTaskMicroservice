@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Be1chenok/testTaskMicroservice/internal/domain"
 	"github.com/Be1chenok/testTaskMicroservice/internal/model"
@@ -23,10 +24,10 @@ const (
 // @Accept json
 // @Produce json
 // @Param input body domain.User true "account info"
-// @Success 200 {integer} integer 1
-// @Failure 400,404 {string} string "message"
-// @Failure 500 {string} string "message"
-// @Failure default {string} string "message"
+// @Success 200 {object} userResponse
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
 // @Router /register [post]
 func (h *Handler) register(resp http.ResponseWriter, req *http.Request) {
 	var input domain.User
@@ -51,9 +52,8 @@ func (h *Handler) register(resp http.ResponseWriter, req *http.Request) {
 		newErrorResponse(resp, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	response := map[string]interface{}{
-		"userId": userId,
+	response := userResponse{
+		UserId: userId,
 	}
 	resp.Header().Set(contentType, applicationJson)
 	resp.WriteHeader(http.StatusOK)
@@ -66,11 +66,11 @@ func (h *Handler) register(resp http.ResponseWriter, req *http.Request) {
 // @ID log-in
 // @Accept json
 // @Produce json
-// @Param input body signInInput true "account info"
-// @Success 200 {string} string "token"
-// @Failure 400,404 {string} string "message"
-// @Failure 500 {string} string "message"
-// @Failure default {string} string "message"
+// @Param input body model.SignInInput true "account info"
+// @Success 200 {object} tokensResponse
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
 // @Router /login [post]
 func (h *Handler) login(resp http.ResponseWriter, req *http.Request) {
 	var input model.SignInInput
@@ -86,7 +86,10 @@ func (h *Handler) login(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	tokens, err := h.service.SignIn(context.Background(), model.SignInInput{
+	ctx, cancle := context.WithTimeout(req.Context(), 200*time.Millisecond)
+	defer cancle()
+
+	tokens, err := h.service.SignIn(ctx, model.SignInInput{
 		Username: input.Username,
 		Password: input.Password,
 	})
@@ -95,10 +98,11 @@ func (h *Handler) login(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	response := map[string]interface{}{
-		"accesToken":   tokens.AccesToken,
-		"refreshToken": tokens.RefreshToken,
+	response := tokensResponse{
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
 	}
+
 	resp.Header().Set(contentType, applicationJson)
 	resp.WriteHeader(http.StatusOK)
 	json.NewEncoder(resp).Encode(response)
@@ -111,28 +115,27 @@ func (h *Handler) login(resp http.ResponseWriter, req *http.Request) {
 // @ID log-out
 // @Accept json
 // @Produce json
-// @Success 200 {string} string "token"
-// @Failure 400,404 {string} string "message"
-// @Failure 500 {string} string "message"
-// @Failure default {string} string "message"
+// @Success 200 {integer} 1
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
 // @Router /auth/logout [get]
 func (h *Handler) logOut(resp http.ResponseWriter, req *http.Request) {
 	header := req.Header.Get(authorizationHeader)
 	headerParts := strings.Split(header, " ")
 
 	accessToken := headerParts[1]
-	if err := h.service.SignOut(context.Background(), accessToken); err != nil {
+
+	ctx, cancle := context.WithTimeout(req.Context(), 200*time.Millisecond)
+	defer cancle()
+
+	if err := h.service.SignOut(ctx, accessToken); err != nil {
 		newErrorResponse(resp, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response := map[string]interface{}{
-		"accessToken":  "",
-		"refreshToken": "",
-	}
 	resp.Header().Set(contentType, applicationJson)
 	resp.WriteHeader(http.StatusOK)
-	json.NewEncoder(resp).Encode(response)
 }
 
 // @Sumary FullLogOut
@@ -142,28 +145,26 @@ func (h *Handler) logOut(resp http.ResponseWriter, req *http.Request) {
 // @ID full-logout
 // @Accept json
 // @Produce json
-// @Success 200 {string} string "token"
-// @Failure 400,404 {string} string "message"
-// @Failure 500 {string} string "message"
-// @Failure default {string} string "message"
+// @Success 200 {integer} 1
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
 // @Router /auth/fullLogout [get]
 func (h *Handler) fullLogOut(resp http.ResponseWriter, req *http.Request) {
 	header := req.Header.Get(authorizationHeader)
 	headerParts := strings.Split(header, " ")
 	accessToken := headerParts[1]
 
-	if err := h.service.FullSignOut(context.Background(), accessToken); err != nil {
+	ctx, cancle := context.WithTimeout(req.Context(), 200*time.Millisecond)
+	defer cancle()
+
+	if err := h.service.FullSignOut(ctx, accessToken); err != nil {
 		newErrorResponse(resp, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response := map[string]interface{}{
-		"accessToken":  "",
-		"refreshToken": "",
-	}
 	resp.Header().Set(contentType, applicationJson)
 	resp.WriteHeader(http.StatusOK)
-	json.NewEncoder(resp).Encode(response)
 }
 
 // @Sumary Refresh
@@ -173,25 +174,28 @@ func (h *Handler) fullLogOut(resp http.ResponseWriter, req *http.Request) {
 // @ID refresh
 // @Accept json
 // @Produce json
-// @Success 200 {string} string "token"
-// @Failure 400,404 {string} string "message"
-// @Failure 500 {string} string "message"
-// @Failure default {string} string "message"
+// @Success 200 {object} tokensResponse
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
 // @Router /auth/refresh [get]
 func (h *Handler) refresh(resp http.ResponseWriter, req *http.Request) {
 	header := req.Header.Get(authorizationHeader)
 	headerParts := strings.Split(header, " ")
 	refreshToken := headerParts[1]
 
-	tokens, err := h.service.RefreshTokens(context.Background(), refreshToken)
+	ctx, cancle := context.WithTimeout(req.Context(), 200*time.Millisecond)
+	defer cancle()
+
+	tokens, err := h.service.RefreshTokens(ctx, refreshToken)
 	if err != nil {
 		newErrorResponse(resp, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response := map[string]interface{}{
-		"accessToken":  tokens.AccesToken,
-		"refreshToken": tokens.RefreshToken,
+	response := tokensResponse{
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
 	}
 	resp.Header().Set(contentType, applicationJson)
 	resp.WriteHeader(http.StatusOK)
@@ -205,14 +209,15 @@ func (h *Handler) refresh(resp http.ResponseWriter, req *http.Request) {
 // @ID home-page
 // @Accept json
 // @Produce json
-// @Success 200 {string} string "home page for user"
-// @Failure 400,404 {string} string "message"
-// @Failure 500 {string} string "message"
-// @Failure default {string} string "message"
+// @Success 200 {object} homeResponse
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
 // @Router /auth/home [get]
 func (h *Handler) homePage(resp http.ResponseWriter, req *http.Request) {
-	response := map[string]interface{}{
-		"home page for user:": h.userId,
+	userId := req.Context().Value("userId").(int)
+	response := homeResponse{
+		UserId: userId,
 	}
 	resp.Header().Set(contentType, applicationJson)
 	resp.WriteHeader(http.StatusOK)

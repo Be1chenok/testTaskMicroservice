@@ -12,7 +12,6 @@ import (
 
 type Handler struct {
 	service *service.Service
-	userId  int
 }
 
 func New(service *service.Service) *Handler {

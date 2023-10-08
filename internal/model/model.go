@@ -8,13 +8,13 @@ type SignInInput struct {
 }
 
 type SignUpInput struct {
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Email    string
+	Username string
+	Password string
 }
 
 type Tokens struct {
-	AccesToken   string
+	AccessToken  string
 	RefreshToken string
 }
 

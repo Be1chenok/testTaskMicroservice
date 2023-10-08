@@ -4,12 +4,36 @@ definitions:
     properties:
       email:
         type: string
+      id:
+        type: integer
       password:
         type: string
       username:
         type: string
     type: object
-  handler.signInInput:
+  handler.errorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  handler.homeResponse:
+    properties:
+      userId:
+        type: integer
+    type: object
+  handler.tokensResponse:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+    type: object
+  handler.userResponse:
+    properties:
+      userId:
+        type: integer
+    type: object
+  model.SignInInput:
     properties:
       password:
         type: string
@@ -32,25 +56,25 @@ paths:
       - application/json
       responses:
         "200":
-          description: token
+          description: OK
           schema:
-            type: string
+            type: integer
         "400":
-          description: message
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         "404":
-          description: message
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         "500":
-          description: message
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         default:
-          description: message
+          description: ""
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
       security:
       - ApiKeyAuth: []
       tags:
@@ -65,25 +89,25 @@ paths:
       - application/json
       responses:
         "200":
-          description: home page for user
+          description: OK
           schema:
-            type: string
+            $ref: '#/definitions/handler.homeResponse'
         "400":
-          description: message
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         "404":
-          description: message
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         "500":
-          description: message
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         default:
-          description: message
+          description: ""
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
       security:
       - ApiKeyAuth: []
       tags:
@@ -98,25 +122,25 @@ paths:
       - application/json
       responses:
         "200":
-          description: token
+          description: OK
           schema:
-            type: string
+            type: integer
         "400":
-          description: message
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         "404":
-          description: message
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         "500":
-          description: message
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         default:
-          description: message
+          description: ""
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
       security:
       - ApiKeyAuth: []
       tags:
@@ -131,25 +155,25 @@ paths:
       - application/json
       responses:
         "200":
-          description: token
+          description: OK
           schema:
-            type: string
+            $ref: '#/definitions/handler.tokensResponse'
         "400":
-          description: message
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         "404":
-          description: message
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         "500":
-          description: message
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         default:
-          description: message
+          description: ""
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
       security:
       - ApiKeyAuth: []
       tags:
@@ -166,30 +190,30 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/handler.signInInput'
+          $ref: '#/definitions/model.SignInInput'
       produces:
       - application/json
       responses:
         "200":
-          description: token
+          description: OK
           schema:
-            type: string
+            $ref: '#/definitions/handler.tokensResponse'
         "400":
-          description: message
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         "404":
-          description: message
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         "500":
-          description: message
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         default:
-          description: message
+          description: ""
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
       tags:
       - Authentefication
   /register:
@@ -211,23 +235,23 @@ paths:
         "200":
           description: OK
           schema:
-            type: integer
+            $ref: '#/definitions/handler.userResponse'
         "400":
-          description: message
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         "404":
-          description: message
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         "500":
-          description: message
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
         default:
-          description: message
+          description: ""
           schema:
-            type: string
+            $ref: '#/definitions/handler.errorResponse'
       tags:
       - Authentefication
 securityDefinitions:

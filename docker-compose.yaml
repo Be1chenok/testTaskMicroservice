@@ -12,12 +12,12 @@ services:
   postgres:
     image: postgres:alpine3.18
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-      PGSSLMODE: disable
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_BASE}
+      PGSSLMODE: ${PG_SSL_MODE}
     ports:
-      - 5433:5432
+      - ${PG_EXTERNAL_PORT}:${PG_PORT}
     networks:
       - network1
     healthcheck:
@@ -30,10 +30,10 @@ services:
     image: redis:latest
     environment:
       REDIS_PASSWORD: ""
-      REDIS_PORT: 6379
-      REDIS_DATABASE: 0
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_DATABASE: ${REDIS_DB}
     ports:
-      - "6378:6379"  
+      - ${REDIS_EXTERNAL_PORT}:${REDIS_PORT}
     networks:
       - network1
     healthcheck:
@@ -45,7 +45,7 @@ services:
   web:
     build: .
     ports:
-      - "8080:8080"
+      - ${SERVER_EXTERNAL_PORT}:${SERVER_PORT}
     depends_on:
       postgres:
         condition: service_healthy

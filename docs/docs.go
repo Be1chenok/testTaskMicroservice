@@ -35,33 +35,33 @@ const docTemplate = `{
                 "operationId": "full-logout",
                 "responses": {
                     "200": {
-                        "description": "token",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "integer"
                         }
                     },
                     "400": {
-                        "description": "message",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "404": {
-                        "description": "message",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "500": {
-                        "description": "message",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "default": {
-                        "description": "message",
+                        "description": "",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     }
                 }
@@ -87,33 +87,33 @@ const docTemplate = `{
                 "operationId": "home-page",
                 "responses": {
                     "200": {
-                        "description": "home page for user",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.homeResponse"
                         }
                     },
                     "400": {
-                        "description": "message",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "404": {
-                        "description": "message",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "500": {
-                        "description": "message",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "default": {
-                        "description": "message",
+                        "description": "",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     }
                 }
@@ -139,33 +139,33 @@ const docTemplate = `{
                 "operationId": "log-out",
                 "responses": {
                     "200": {
-                        "description": "token",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "integer"
                         }
                     },
                     "400": {
-                        "description": "message",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "404": {
-                        "description": "message",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "500": {
-                        "description": "message",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "default": {
-                        "description": "message",
+                        "description": "",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     }
                 }
@@ -191,33 +191,33 @@ const docTemplate = `{
                 "operationId": "refresh",
                 "responses": {
                     "200": {
-                        "description": "token",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.tokensResponse"
                         }
                     },
                     "400": {
-                        "description": "message",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "404": {
-                        "description": "message",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "500": {
-                        "description": "message",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "default": {
-                        "description": "message",
+                        "description": "",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     }
                 }
@@ -243,39 +243,39 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.signInInput"
+                            "$ref": "#/definitions/model.SignInInput"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "token",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.tokensResponse"
                         }
                     },
                     "400": {
-                        "description": "message",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "404": {
-                        "description": "message",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "500": {
-                        "description": "message",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "default": {
-                        "description": "message",
+                        "description": "",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     }
                 }
@@ -309,31 +309,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "integer"
+                            "$ref": "#/definitions/handler.userResponse"
                         }
                     },
                     "400": {
-                        "description": "message",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "404": {
-                        "description": "message",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "500": {
-                        "description": "message",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     },
                     "default": {
-                        "description": "message",
+                        "description": "",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     }
                 }
@@ -347,6 +347,9 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "id": {
+                    "type": "integer"
+                },
                 "password": {
                     "type": "string"
                 },
@@ -355,7 +358,42 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.signInInput": {
+        "handler.errorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.homeResponse": {
+            "type": "object",
+            "properties": {
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handler.tokensResponse": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "refreshToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.userResponse": {
+            "type": "object",
+            "properties": {
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.SignInInput": {
             "type": "object",
             "properties": {
                 "password": {

@@ -174,7 +174,7 @@ func (s *AuthentificationService) createSession(ctx context.Context, userId int)
 	}
 
 	return model.Tokens{
-			AccesToken:   accessToken,
+			AccessToken:  accessToken,
 			RefreshToken: refreshToken},
 		nil
 }

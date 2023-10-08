@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/Be1chenok/testTaskMicroservice/internal/config"
 	"github.com/Be1chenok/testTaskMicroservice/internal/delivery/http/handler"
@@ -18,7 +19,8 @@ import (
 )
 
 func Run() {
-	ctx := context.Background()
+	ctx, cancle := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancle()
 
 	conf, err := config.Init()
 	if err != nil {

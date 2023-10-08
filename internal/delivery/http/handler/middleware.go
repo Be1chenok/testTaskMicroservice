@@ -23,9 +23,9 @@ func (h *Handler) userAccessIdentity(next http.Handler) http.Handler {
 			return
 		}
 
-		h.userId = userId
+		ctx := context.WithValue(req.Context(), "userId", userId)
 
-		next.ServeHTTP(resp, req)
+		next.ServeHTTP(resp, req.WithContext(ctx))
 	})
 }
 
